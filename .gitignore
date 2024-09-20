@@ -1,0 +1,5 @@
+build
+builddir
+subprojects/app
+subprojects/tgui
+subprojects/tgui.wrap
