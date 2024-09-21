@@ -1,3 +1,38 @@
+Renderer.1 {
+    BackgroundColor = #F5F5F5;
+    BackgroundColorHover = white;
+    BorderColor = black;
+    Borders = (1, 1, 1, 1);
+    Padding = (0, 0, 0, 0);
+    SelectedBackgroundColor = #006EFF;
+    SelectedBackgroundColorHover = #1E96FF;
+    SelectedTextColor = white;
+    TextColor = #3C3C3C;
+    TextColorHover = black;
+    TextureBackground = None;
+    TextureBranchCollapsed = None;
+    TextureBranchExpanded = None;
+    TextureLeaf = None;
+
+    Scrollbar {
+        ArrowBackgroundColor = #F5F5F5;
+        ArrowBackgroundColorHover = white;
+        ArrowColor = #3C3C3C;
+        ArrowColorHover = black;
+        TextureArrowDown = None;
+        TextureArrowDownHover = None;
+        TextureArrowUp = None;
+        TextureArrowUpHover = None;
+        TextureThumb = None;
+        TextureThumbHover = None;
+        TextureTrack = None;
+        TextureTrackHover = None;
+        ThumbColor = #DCDCDC;
+        ThumbColorHover = #E6E6E6;
+        TrackColor = #F5F5F5;
+    }
+}
+
 RichTextLabel.tasks_richtextlabel {
     Position = (40, 30);
     ScrollbarPolicy = Automatic;
@@ -28,36 +63,10 @@ TreeView.tasks_treeview {
     HorizontalScrollbarPolicy = Automatic;
     ItemHeight = 19;
     Position = (40, 110);
+    Renderer = &1;
     Size = (360, 224);
     TextSize = 20;
     VerticalScrollbarPolicy = Automatic;
-
-    Renderer {
-        BackgroundColor = #F5F5F5;
-        BackgroundColorHover = white;
-        BorderColor = black;
-        Borders = (1, 1, 1, 1);
-        Padding = (0, 0, 0, 0);
-        SelectedBackgroundColor = #006EFF;
-        SelectedBackgroundColorHover = #1E96FF;
-        SelectedTextColor = white;
-        TextColor = #3C3C3C;
-        TextColorHover = black;
-        TextureBackground = None;
-        TextureBranchCollapsed = None;
-        TextureBranchExpanded = None;
-        TextureLeaf = None;
-
-        Scrollbar {
-            ArrowBackgroundColor = #F5F5F5;
-            ArrowBackgroundColorHover = white;
-            ArrowColor = #3C3C3C;
-            ArrowColorHover = black;
-            ThumbColor = #DCDCDC;
-            ThumbColorHover = #E6E6E6;
-            TrackColor = #F5F5F5;
-        }
-    }
 }
 
 RichTextLabel.RichTextLabel1 {
@@ -90,34 +99,8 @@ TreeView.calendar_treeview {
     HorizontalScrollbarPolicy = Automatic;
     ItemHeight = 19;
     Position = (800, 110);
+    Renderer = &1;
     Size = (360, 224);
     TextSize = 20;
     VerticalScrollbarPolicy = Automatic;
-
-    Renderer {
-        BackgroundColor = #F5F5F5;
-        BackgroundColorHover = white;
-        BorderColor = black;
-        Borders = (1, 1, 1, 1);
-        Padding = (0, 0, 0, 0);
-        SelectedBackgroundColor = #006EFF;
-        SelectedBackgroundColorHover = #1E96FF;
-        SelectedTextColor = white;
-        TextColor = #3C3C3C;
-        TextColorHover = black;
-        TextureBackground = None;
-        TextureBranchCollapsed = None;
-        TextureBranchExpanded = None;
-        TextureLeaf = None;
-
-        Scrollbar {
-            ArrowBackgroundColor = #F5F5F5;
-            ArrowBackgroundColorHover = white;
-            ArrowColor = #3C3C3C;
-            ArrowColorHover = black;
-            ThumbColor = #DCDCDC;
-            ThumbColorHover = #E6E6E6;
-            TrackColor = #F5F5F5;
-        }
-    }
 }

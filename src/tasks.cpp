@@ -204,7 +204,7 @@ void TasksApp::TasksManager::printTasksToTreeView(std::shared_ptr<app::Window> w
 
 TasksApp::TasksManager::~TasksManager()
 {
-
+    boost::property_tree::write_json(tasks_file, tasks_tree);
 }
 
 void TasksApp::TasksManager::parseTasksTree(const boost::property_tree::ptree &property_tree, const std::string_view key)
