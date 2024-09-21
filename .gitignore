@@ -2,5 +2,9 @@ build
 builddir
 subprojects/app
 subprojects/tgui
+subprojects/packagecache
+subprojects/SQLiteCpp-3.3.2
+subprojects/sqlite-amalgamation-3460100
+subprojects/sqlite3.wrap
 subprojects/tgui.wrap
 .vscode

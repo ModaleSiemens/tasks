@@ -1,0 +1,61 @@
+RichTextLabel.tasks_richtextlabel {
+    Position = (40, 30);
+    ScrollbarPolicy = Automatic;
+    Size = (89, 40);
+    Text = Tasks;
+    TextSize = 30;
+
+    Renderer {
+        BackgroundColor = transparent;
+        BorderColor = #3C3C3C;
+        Borders = (0, 0, 0, 0);
+        TextColor = white;
+        TextureBackground = None;
+
+        Scrollbar {
+            ArrowBackgroundColor = #F5F5F5;
+            ArrowBackgroundColorHover = white;
+            ArrowColor = #3C3C3C;
+            ArrowColorHover = black;
+            ThumbColor = #DCDCDC;
+            ThumbColorHover = #E6E6E6;
+            TrackColor = #F5F5F5;
+        }
+    }
+}
+
+TreeView.tasks_treeview {
+    HorizontalScrollbarPolicy = Automatic;
+    ItemHeight = 19;
+    Position = (40, 110);
+    Size = (360, 224);
+    TextSize = 20;
+    VerticalScrollbarPolicy = Automatic;
+
+    Renderer {
+        BackgroundColor = #F5F5F5;
+        BackgroundColorHover = white;
+        BorderColor = black;
+        Borders = (1, 1, 1, 1);
+        Padding = (0, 0, 0, 0);
+        SelectedBackgroundColor = #006EFF;
+        SelectedBackgroundColorHover = #1E96FF;
+        SelectedTextColor = white;
+        TextColor = #3C3C3C;
+        TextColorHover = black;
+        TextureBackground = None;
+        TextureBranchCollapsed = None;
+        TextureBranchExpanded = None;
+        TextureLeaf = None;
+
+        Scrollbar {
+            ArrowBackgroundColor = #F5F5F5;
+            ArrowBackgroundColorHover = white;
+            ArrowColor = #3C3C3C;
+            ArrowColorHover = black;
+            ThumbColor = #DCDCDC;
+            ThumbColorHover = #E6E6E6;
+            TrackColor = #F5F5F5;
+        }
+    }
+}

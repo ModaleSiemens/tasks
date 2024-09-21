@@ -16,9 +16,11 @@ add_project_link_arguments(
 )
 
 subproject('app')
+subproject('sqlitecpp')
 
 deps = [
-    dependency('libapp')
+    dependency('libapp'),
+    dependency('sqlitecpp')
 ]
 
 subdir('src')
