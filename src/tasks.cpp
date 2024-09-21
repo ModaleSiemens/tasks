@@ -1,5 +1,6 @@
 #include <iostream>
 #include <print>
+#include <thread>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
@@ -36,11 +37,13 @@ class TasksApp : public app::Application
                     const std::string_view new_name
                 );
 
-                void update(std::shared_ptr<app::Window> window);
+                void printTasksToTreeView(std::shared_ptr<app::Window> window);
 
                 ~TasksManager();
 
             private:
+                std::fstream tasks_file;
+
                 boost::property_tree::ptree tasks_tree;
 
                 std::shared_ptr<app::Window> window;
@@ -85,6 +88,14 @@ class TasksApp : public app::Application
 
 };
 
+class Popup : public app::Window
+{
+    public:
+        Popup(app::Application& app, const std::string_view interface_path);
+
+        virtual ~Popup() = default;
+};
+
 int main()
 {
     using namespace std::chrono_literals;
@@ -101,6 +112,9 @@ int main()
         new_timepoint = steady_clock::now();
 
         app.update(new_timepoint - old_timepoint);
+
+        std::this_thread::sleep_for(1.0s / 60.0);
+
     }
 
     return 0;
@@ -146,14 +160,34 @@ void TasksApp::setupMainInterface()
 {
     auto tasks_treeview {main_window->getWidget<tgui::TreeView>("tasks_treeview")};
 
-    tasks_manager.update(main_window);
+    try
+    {
+        tasks_manager.printTasksToTreeView(main_window);
+    }
+    catch(const boost::property_tree::json_parser::json_parser_error& e)
+    {
+        addWindow<Popup>("popup", true, getInterfacePath("error"));
+
+        auto popup {getWindow("popup")};
+
+        popup->setTitle("Failed to load tasks!");
+        popup->getWidget<tgui::TextArea>("message_textarea")->setText(
+            std::format("Failed to parse tasks JSON data!\nException: \"{}\".", e.what())
+        );
+        popup->getWidget<tgui::Button>("ok_button")->setText("Quit");
+        popup->getWidget<tgui::Button>("ok_button")->onClick(
+            []
+            {
+                std::exit(1);
+            }
+        );
+    }
 }
 
 TasksApp::TasksManager::TasksManager(const std::filesystem::path file)
+:
+    tasks_file{file}
 {
-    std::ifstream data_file {file};
-
-    boost::property_tree::read_json(data_file, tasks_tree);
 }
 
 void TasksApp::TasksManager::setWindow(std::shared_ptr<app::Window> t_window)
@@ -161,13 +195,16 @@ void TasksApp::TasksManager::setWindow(std::shared_ptr<app::Window> t_window)
     window = t_window;
 }
 
-void TasksApp::TasksManager::update(std::shared_ptr<app::Window> window)
+void TasksApp::TasksManager::printTasksToTreeView(std::shared_ptr<app::Window> window)
 {
+    boost::property_tree::read_json(tasks_file, tasks_tree);
+
     parseTasksTree(tasks_tree, "");
 }
 
 TasksApp::TasksManager::~TasksManager()
 {
+
 }
 
 void TasksApp::TasksManager::parseTasksTree(const boost::property_tree::ptree &property_tree, const std::string_view key)
@@ -200,4 +237,16 @@ void TasksApp::TasksManager::parseTasksTree(const boost::property_tree::ptree &p
 
         parseTasksTree(data, next_key + current_key);
     }
+}
+
+Popup::Popup(app::Application &app, const std::string_view interface_path)
+:
+    Window{
+        app,
+        interface_path,
+        sf::VideoMode(500, 250),
+        "Alert!",
+        sf::Style::Titlebar
+    }
+{
 }
