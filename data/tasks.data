@@ -1,0 +1,13 @@
+{
+  "Music": {
+    "Practice": {
+      "Piano": {},
+      "Bass": {}
+    },
+    "Theory": {}
+  },
+  "C++": {
+    "Practice": {},
+    "Theory": {}
+  }
+}
