@@ -1,9 +1,87 @@
 #include <iostream>
+#include <print>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
 #include "app.hpp"
 
 class TasksApp : public app::Application 
 {
     public:
+        TasksApp();
+
+        virtual void update(const app::Seconds delta_time) override;
+
+        virtual ~TasksApp();
+
+    private:
+        class TasksManager
+        {
+            public:
+                TasksManager(const std::filesystem::path file);
+
+                void setWindow(std::shared_ptr<app::Window> window);
+
+                bool addTask   (const std::vector<std::string> hierarchy, const std::string_view task);
+                bool removeTask(const std::vector<std::string> hierarchy, const std::string_view task);
+        
+                void calculateTasksTotalTime(
+                    const std::chrono::system_clock::time_point start,
+                    const std::chrono::system_clock::time_point end
+                );
+
+                void renameTask(
+                    const std::vector<std::string> hierarchy,
+                    const std::string_view old_name,
+                    const std::string_view new_name
+                );
+
+                void update(std::shared_ptr<app::Window> window);
+
+                ~TasksManager();
+
+            private:
+                boost::property_tree::ptree tasks_tree;
+
+                std::shared_ptr<app::Window> window;
+
+                void parseTasksTree(
+                    const boost::property_tree::ptree& property_tree,
+                    const std::string_view key
+                );
+        };
+
+        class CalendarManager
+        {
+            public:
+                enum class TimeUnit
+                {
+                    days,
+                    weeks,
+                    months,
+                    years
+                };
+
+                CalendarManager(const std::filesystem::path file);
+
+                void setTimeUnit(const TimeUnit unit);
+
+                void update(std::shared_ptr<app::Window> window);
+
+                ~CalendarManager();
+        };
+
+        // Main window shortcut
+        std::shared_ptr<app::Window> main_window;
+
+        std::filesystem::path interfaces_path {"../assets/interfaces"};
+
+        TasksManager    tasks_manager    {"../data/tasks.data"};
+        //CalendarManager calendar_manager {"../data/calendar.data"};
+
+        std::string getInterfacePath(const std::string_view interface_name);
+
+        void setupMainInterface();
 
 };
 
@@ -17,7 +95,7 @@ int main()
     steady_clock::time_point new_timepoint {steady_clock::now()};
     steady_clock::time_point old_timepoint;
 
-    while(true)
+    while(app.getWindow("main"))
     {
         old_timepoint = new_timepoint;
         new_timepoint = steady_clock::now();
@@ -26,4 +104,100 @@ int main()
     }
 
     return 0;
-} 
+}
+
+TasksApp::TasksApp()
+{
+    addWindow(
+        "main",
+        true,
+        getInterfacePath("main"),
+        sf::VideoMode(1200, 800),
+        "Tasks (studying time managing program)",
+        sf::Style::Close
+    );
+    
+    main_window = getWindow("main");
+
+    tasks_manager.setWindow(main_window);
+
+    setupMainInterface();
+}
+
+void TasksApp::update(const app::Seconds delta_time)
+{
+    //tasks_manager.update(*main_window, delta_time);
+    //calendar_manager.update(*main_window, delta_time);
+    
+    Application::update(delta_time);
+}
+
+TasksApp::~TasksApp()
+{
+
+}
+
+std::string TasksApp::getInterfacePath(const std::string_view interface_name)
+{
+    return (interfaces_path / (std::string{interface_name} + ".txt")).string();
+}
+
+void TasksApp::setupMainInterface()
+{
+    auto tasks_treeview {main_window->getWidget<tgui::TreeView>("tasks_treeview")};
+
+    tasks_manager.update(main_window);
+}
+
+TasksApp::TasksManager::TasksManager(const std::filesystem::path file)
+{
+    std::ifstream data_file {file};
+
+    boost::property_tree::read_json(data_file, tasks_tree);
+}
+
+void TasksApp::TasksManager::setWindow(std::shared_ptr<app::Window> t_window)
+{
+    window = t_window;
+}
+
+void TasksApp::TasksManager::update(std::shared_ptr<app::Window> window)
+{
+    parseTasksTree(tasks_tree, "");
+}
+
+TasksApp::TasksManager::~TasksManager()
+{
+}
+
+void TasksApp::TasksManager::parseTasksTree(const boost::property_tree::ptree &property_tree, const std::string_view key)
+{
+    std::string next_key;
+
+    if(!key.empty())
+    {
+        next_key = std::string{key} + '.';
+    }
+
+    std::vector<tgui::String> hierarchy;
+    std::string temp_string;
+    std::stringstream string_stream {std::string{key}};
+
+    while(std::getline(string_stream, temp_string, '.'))
+    {
+        hierarchy.push_back(temp_string);
+    }
+
+    for(const auto& [current_key, data] : property_tree)
+    {   
+        hierarchy.push_back(current_key);
+
+        window->getWidget<tgui::TreeView>("tasks_treeview")->addItem(
+            hierarchy
+        );
+
+        hierarchy.pop_back();
+
+        parseTasksTree(data, next_key + current_key);
+    }
+}

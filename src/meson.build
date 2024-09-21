@@ -1,1 +1,3 @@
-tasks_src = files('tasks.cpp')
+tasks_src = files(
+    'tasks.cpp'
+)
