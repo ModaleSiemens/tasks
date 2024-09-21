@@ -15,7 +15,7 @@ add_project_link_arguments(
     language: 'cpp'
 )
 
-libapp_proj = subproject('app')
+subproject('app')
 
 deps = [
     dependency('libapp')
