@@ -42,7 +42,7 @@ class TasksApp : public app::Application
                 ~TasksManager();
 
             private:
-                std::fstream tasks_file;
+                std::filesystem::path tasks_file_path;
 
                 boost::property_tree::ptree tasks_tree;
 
@@ -182,11 +182,49 @@ void TasksApp::setupMainInterface()
             }
         );
     }
+
+    tasks_treeview->onRightClick(
+        [=, this]
+        {
+            if( 
+                const auto menu_listbox {main_window->getWidget("menu_listbox")}
+            )
+            {
+                main_window->remove(menu_listbox);         
+            }
+
+            sf::Mouse mouse;
+
+            auto menu {tgui::ListBox::create()};
+
+            menu->setPosition(mouse.getPosition(*main_window).x, mouse.getPosition(*main_window).y);
+
+            menu->addItem("Start Timer", "timer");
+            menu->addItem("Start Countdown", "countdown");
+            menu->addItem("Rename Task", "rename");
+            menu->addItem("Delete Task", "delete");
+            menu->addItem("Exit Menu", "exit");
+
+            menu->onDoubleClick(
+                [=, this]
+                {
+                    const auto selected_item {menu->getSelectedItemId()};
+
+                    if(selected_item == "exit")
+                    {
+                        main_window->remove(menu);
+                    }
+                }
+            );
+
+            main_window->add(menu, "menu_listbox");                
+        }
+    );
 }
 
-TasksApp::TasksManager::TasksManager(const std::filesystem::path file)
+TasksApp::TasksManager::TasksManager(const std::filesystem::path file_path)
 :
-    tasks_file{file}
+    tasks_file_path{file_path}
 {
 }
 
@@ -197,13 +235,19 @@ void TasksApp::TasksManager::setWindow(std::shared_ptr<app::Window> t_window)
 
 void TasksApp::TasksManager::printTasksToTreeView(std::shared_ptr<app::Window> window)
 {
+    std::ifstream tasks_file {tasks_file_path};
+
     boost::property_tree::read_json(tasks_file, tasks_tree);
+
+    tasks_file.close();
 
     parseTasksTree(tasks_tree, "");
 }
 
 TasksApp::TasksManager::~TasksManager()
 {
+    std::ofstream tasks_file {tasks_file_path, std::ios::out | std::ios::trunc};
+
     boost::property_tree::write_json(tasks_file, tasks_tree);
 }
 
