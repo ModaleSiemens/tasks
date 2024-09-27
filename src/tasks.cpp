@@ -1,8 +1,8 @@
 #include <iostream>
 #include <print>
 #include <thread>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <boost/json/src.hpp>
+#include <fstream>
 
 #include "app.hpp"
 
@@ -23,8 +23,8 @@ class TasksApp : public app::Application
 
                 void setWindow(std::shared_ptr<app::Window> window);
 
-                bool addTask   (const std::vector<std::string> hierarchy, const std::string_view task);
-                bool removeTask(const std::vector<std::string> hierarchy, const std::string_view task);
+                bool addTask   (const std::vector<tgui::String> hierarchy, const std::string_view task);
+                bool removeTask(const std::vector<tgui::String> hierarchy, const std::string_view task);
         
                 void calculateTasksTotalTime(
                     const std::chrono::system_clock::time_point start,
@@ -32,26 +32,35 @@ class TasksApp : public app::Application
                 );
 
                 void renameTask(
-                    const std::vector<std::string> hierarchy,
+                    const std::vector<tgui::String> hierarchy,
                     const std::string_view old_name,
                     const std::string_view new_name
                 );
 
                 void printTasksToTreeView(std::shared_ptr<app::Window> window);
 
+                void loadFromFile();
+                void saveToFile();
+
                 ~TasksManager();
 
             private:
+                boost::json::value& getTasksJsonValue(
+                    const std::vector<tgui::String> hierarchy
+                );
+
+                void printTasksJson(
+                    const boost::json::value& value,
+                    const std::string_view path = ""
+                );
+
+                std::vector<tgui::String> getHierarchyFromString(const std::string_view str);
+
                 std::filesystem::path tasks_file_path;
 
-                boost::property_tree::ptree tasks_tree;
+                boost::json::value tasks_json;
 
                 std::shared_ptr<app::Window> window;
-
-                void parseTasksTree(
-                    const boost::property_tree::ptree& property_tree,
-                    const std::string_view key
-                );
         };
 
         class CalendarManager
@@ -135,6 +144,30 @@ TasksApp::TasksApp()
 
     tasks_manager.setWindow(main_window);
 
+    try
+    {
+        tasks_manager.loadFromFile();
+    }
+    catch(const boost::json::system_error& e)
+    {
+        addWindow<Popup>("popup", true, getInterfacePath("error"));
+
+        auto popup {getWindow("popup")};
+
+        popup->setTitle("Failed to load tasks!");
+        popup->getWidget<tgui::TextArea>("message_textarea")->setText(
+            std::format("Failed to parse tasks JSON data!\nException: \"{}\".", e.what())
+        );
+        popup->getWidget<tgui::Button>("ok_button")->setText("Quit");
+        popup->getWidget<tgui::Button>("ok_button")->onClick(
+            []
+            {
+                std::exit(1);
+            }
+        );
+    }
+
+
     setupMainInterface();
 }
 
@@ -160,28 +193,7 @@ void TasksApp::setupMainInterface()
 {
     auto tasks_treeview {main_window->getWidget<tgui::TreeView>("tasks_treeview")};
 
-    try
-    {
-        tasks_manager.printTasksToTreeView(main_window);
-    }
-    catch(const boost::property_tree::json_parser::json_parser_error& e)
-    {
-        addWindow<Popup>("popup", true, getInterfacePath("error"));
-
-        auto popup {getWindow("popup")};
-
-        popup->setTitle("Failed to load tasks!");
-        popup->getWidget<tgui::TextArea>("message_textarea")->setText(
-            std::format("Failed to parse tasks JSON data!\nException: \"{}\".", e.what())
-        );
-        popup->getWidget<tgui::Button>("ok_button")->setText("Quit");
-        popup->getWidget<tgui::Button>("ok_button")->onClick(
-            []
-            {
-                std::exit(1);
-            }
-        );
-    }
+    tasks_manager.printTasksToTreeView(main_window);
 
     tasks_treeview->onRightClick(
         [=, this]
@@ -213,7 +225,27 @@ void TasksApp::setupMainInterface()
                     if(selected_item == "exit")
                     {
                         main_window->remove(menu);
+
+                        return;
                     }
+                    else
+                    {
+                        auto task {tasks_treeview->getSelectedItem()};
+                        const auto task_name {task.back()};
+                        task.pop_back();
+
+                        if(selected_item == "delete")
+                        {
+                            tasks_manager.removeTask(task, task_name.toStdString());
+                        }
+
+                        if(selected_item == "rename")
+                        {
+                        }
+                        
+                    }
+
+                    main_window->remove(menu);
                 }
             );
 
@@ -233,54 +265,75 @@ void TasksApp::TasksManager::setWindow(std::shared_ptr<app::Window> t_window)
     window = t_window;
 }
 
+bool TasksApp::TasksManager::removeTask(const std::vector<tgui::String> hierarchy, const std::string_view task)
+{
+
+}
+
 void TasksApp::TasksManager::printTasksToTreeView(std::shared_ptr<app::Window> window)
 {
-    std::ifstream tasks_file {tasks_file_path};
+    printTasksJson(tasks_json);
+}
 
-    boost::property_tree::read_json(tasks_file, tasks_tree);
+void TasksApp::TasksManager::loadFromFile()
+{
+    std::ifstream file (tasks_file_path);
 
-    tasks_file.close();
+    std::stringstream buffer;
 
-    parseTasksTree(tasks_tree, "");
+    buffer << file.rdbuf();
+
+    tasks_json = boost::json::parse(buffer.str());
+}
+
+void TasksApp::TasksManager::saveToFile()
+{
+    std::ofstream file (tasks_file_path);
+
+    file << boost::json::serialize(tasks_json);
 }
 
 TasksApp::TasksManager::~TasksManager()
 {
-    std::ofstream tasks_file {tasks_file_path, std::ios::out | std::ios::trunc};
-
-    boost::property_tree::write_json(tasks_file, tasks_tree);
+    saveToFile();
 }
 
-void TasksApp::TasksManager::parseTasksTree(const boost::property_tree::ptree &property_tree, const std::string_view key)
+void TasksApp::TasksManager::printTasksJson(const boost::json::value &value, const std::string_view path)
 {
-    std::string next_key;
+    std::println("{}", path);
 
-    if(!key.empty())
+    if(value.is_object())
     {
-        next_key = std::string{key} + '.';
-    }
+        const boost::json::object& object {value.as_object()};
 
+        for(const auto&[key, value] : object)
+        {
+            auto hierarchy {getHierarchyFromString(path)};
+
+            hierarchy.push_back(tgui::String{key});
+
+            window->getWidget<tgui::TreeView>("tasks_treeview")->addItem(
+                hierarchy
+            );
+
+            printTasksJson(value, std::string{path} + (path == "" ? "" : ".") + std::string{key});
+        }
+    }
+}
+
+std::vector<tgui::String> TasksApp::TasksManager::getHierarchyFromString(const std::string_view str)
+{
     std::vector<tgui::String> hierarchy;
-    std::string temp_string;
-    std::stringstream string_stream {std::string{key}};
 
-    while(std::getline(string_stream, temp_string, '.'))
+    std::string temp;
+    std::stringstream stream {std::string{str}};
+
+    while(std::getline(stream, temp, '.'))
     {
-        hierarchy.push_back(temp_string);
+        hierarchy.push_back(temp);
     }
 
-    for(const auto& [current_key, data] : property_tree)
-    {   
-        hierarchy.push_back(current_key);
-
-        window->getWidget<tgui::TreeView>("tasks_treeview")->addItem(
-            hierarchy
-        );
-
-        hierarchy.pop_back();
-
-        parseTasksTree(data, next_key + current_key);
-    }
+    return hierarchy;
 }
 
 Popup::Popup(app::Application &app, const std::string_view interface_path)
