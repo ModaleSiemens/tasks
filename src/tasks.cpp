@@ -31,7 +31,7 @@ class TasksApp : public app::Application
                     const std::chrono::system_clock::time_point end
                 );
 
-                void renameTask(
+                bool renameTask(
                     const std::vector<tgui::String>& hierarchy,
                     const std::string_view old_name,
                     const std::string_view new_name
@@ -241,6 +241,23 @@ void TasksApp::setupMainInterface()
 
                         if(selected_item == "rename")
                         {
+                            auto rename_editbox {tgui::EditBox::create()};
+
+                            rename_editbox->onReturnKeyPress(
+                                [=, this]
+                                {
+                                    if(!rename_editbox->getText().empty())
+                                    {
+                                        tasks_manager.renameTask(task, task_name.toStdString(), rename_editbox->getText().toStdString());
+                                    }
+
+                                    main_window->remove(rename_editbox);
+                                }
+                            );
+
+                            rename_editbox->setPosition(mouse.getPosition(*main_window).x, mouse.getPosition(*main_window).y);
+
+                            main_window->add(rename_editbox);
                         }
                         
                     }
@@ -282,6 +299,35 @@ bool TasksApp::TasksManager::removeTask(const std::vector<tgui::String>& hierarc
         );
 
         saveToFile();
+
+        return true;
+    }
+    else 
+    {
+        return false;
+    }   
+}
+
+bool TasksApp::TasksManager::renameTask(const std::vector<tgui::String> &hierarchy, const std::string_view old_name, const std::string_view new_name)
+{
+    boost::json::object* object {getTasksJsonValue(hierarchy).if_object()};
+
+    if(object->contains(old_name))
+    {
+        auto object_copy {object->at(old_name).as_object()};
+
+        object->emplace(new_name, object_copy);
+
+        auto final_hierarchy {hierarchy};
+
+        final_hierarchy.push_back(tgui::String{old_name});
+
+        window->getWidget<tgui::TreeView>("tasks_treeview")->changeItem(
+            final_hierarchy,
+            tgui::String{new_name}
+        );
+
+        removeTask(hierarchy, old_name);
 
         return true;
     }
