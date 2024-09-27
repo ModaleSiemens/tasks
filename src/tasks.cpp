@@ -23,8 +23,8 @@ class TasksApp : public app::Application
 
                 void setWindow(std::shared_ptr<app::Window> window);
 
-                bool addTask   (const std::vector<tgui::String> hierarchy, const std::string_view task);
-                bool removeTask(const std::vector<tgui::String> hierarchy, const std::string_view task);
+                bool addTask   (const std::vector<tgui::String>& hierarchy, const std::string_view task);
+                bool removeTask(const std::vector<tgui::String>& hierarchy, const std::string_view task);
         
                 void calculateTasksTotalTime(
                     const std::chrono::system_clock::time_point start,
@@ -32,7 +32,7 @@ class TasksApp : public app::Application
                 );
 
                 void renameTask(
-                    const std::vector<tgui::String> hierarchy,
+                    const std::vector<tgui::String>& hierarchy,
                     const std::string_view old_name,
                     const std::string_view new_name
                 );
@@ -265,9 +265,30 @@ void TasksApp::TasksManager::setWindow(std::shared_ptr<app::Window> t_window)
     window = t_window;
 }
 
-bool TasksApp::TasksManager::removeTask(const std::vector<tgui::String> hierarchy, const std::string_view task)
+bool TasksApp::TasksManager::removeTask(const std::vector<tgui::String>& hierarchy, const std::string_view task)
 {
+    boost::json::object* object {getTasksJsonValue(hierarchy).if_object()};
 
+    if(object->contains(task))
+    {
+        object->erase(task);
+
+        auto final_hierarchy {hierarchy};
+
+        final_hierarchy.push_back(tgui::String{task});
+
+        window->getWidget<tgui::TreeView>("tasks_treeview")->removeItem(
+            final_hierarchy
+        );
+
+        saveToFile();
+
+        return true;
+    }
+    else 
+    {
+        return false;
+    }   
 }
 
 void TasksApp::TasksManager::printTasksToTreeView(std::shared_ptr<app::Window> window)
@@ -298,10 +319,22 @@ TasksApp::TasksManager::~TasksManager()
     saveToFile();
 }
 
+boost::json::value &TasksApp::TasksManager::getTasksJsonValue(const std::vector<tgui::String> hierarchy)
+{
+    std::string json_pointer {};
+
+    for(const auto& element : hierarchy)
+    {
+        json_pointer += '/';
+        json_pointer += element.toStdString();
+    }
+
+    return tasks_json.at_pointer(json_pointer);
+
+}
+
 void TasksApp::TasksManager::printTasksJson(const boost::json::value &value, const std::string_view path)
 {
-    std::println("{}", path);
-
     if(value.is_object())
     {
         const boost::json::object& object {value.as_object()};
