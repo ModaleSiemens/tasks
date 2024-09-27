@@ -1,13 +1,1 @@
-{
-    "Music": {
-        "Practice": {
-            "Piano": "",
-            "Bass": ""
-        },
-        "Theory": ""
-    },
-    "C++": {
-        "Practice": "",
-        "Theory": ""
-    }
-}
+{"Music":{"Practice":{"Piano":"","Bass":""},"Theory":""},"C++":{"Practice":"","Theory":""}}
